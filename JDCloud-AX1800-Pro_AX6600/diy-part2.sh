@@ -14,8 +14,8 @@
 sed -i 's/192.168.1.1/192.168.68.1/g' package/base-files/files/bin/config_generate
 # 去掉默认密码
 sed -i "/CYXluq4wUazHjmCDBCqXF/d" package/lean/default-settings/files/zzz-default-settings
-#去除默认bootstrap主题
-sed -i '/set luci.main.mediaurlbase=\/luci-static\/bootstrap/d' feeds/luci/themes/luci-theme-bootstrap/root/etc/uci-defaults/30_luci-theme-bootstrap
+#替换默认主题为luci-theme-infinityfreedom
+sed -i 's/luci-theme-bootstrap/luci-theme-infinityfreedom/' feeds/luci/collections/luci/Makefile
 ##-----------------Add dev core for kenzo OpenClash------------------
 curl -sL -m 30 --retry 2 https://raw.githubusercontent.com/vernesong/OpenClash/core/master/dev/clash-linux-arm64.tar.gz -o /tmp/clash.tar.gz
 tar zxvf /tmp/clash.tar.gz -C /tmp >/dev/null 2>&1
