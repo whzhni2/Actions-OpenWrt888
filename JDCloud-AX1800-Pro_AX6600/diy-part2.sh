@@ -16,6 +16,8 @@ sed -i 's/192.168.1.1/192.168.68.1/g' package/base-files/files/bin/config_genera
 sed -i "/CYXluq4wUazHjmCDBCqXF/d" package/lean/default-settings/files/zzz-default-settings
 #替换默认主题为luci-theme-infinityfreedom
 sed -i 's/luci-theme-bootstrap/luci-theme-infinityfreedom/' feeds/luci/collections/luci/Makefile
+# 修改默认主机名
+#sed -i '/uci commit system/i\uci set system.@system[0].hostname='OpenWrt'' package/lean/default-settings/files/zzz-default-settings
 ##-----------------Add dev core for kenzo OpenClash------------------
 curl -sL -m 30 --retry 2 https://raw.githubusercontent.com/vernesong/OpenClash/core/master/dev/clash-linux-arm64.tar.gz -o /tmp/clash.tar.gz
 tar zxvf /tmp/clash.tar.gz -C /tmp >/dev/null 2>&1
