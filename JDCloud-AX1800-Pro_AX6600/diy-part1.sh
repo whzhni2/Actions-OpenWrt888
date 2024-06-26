@@ -15,6 +15,5 @@
 
 # Add a feed source
 # luci-theme-infinityfreedom主题
-src-git infinityfreedom https://github.com/xiaoqingfengATGH/luci-theme-infinityfreedom.git
 git clone https://github.com/kenzok8/openwrt-packages package/kenzo
 git clone https://github.com/kenzok8/small package/small
