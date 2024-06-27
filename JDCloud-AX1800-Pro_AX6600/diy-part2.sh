@@ -19,9 +19,9 @@ sed -i 's/luci-theme-bootstrap/luci-theme-infinityfreedom/' feeds/luci/collectio
 # 修改默认主机名
 #sed -i '/uci commit system/i\uci set system.@system[0].hostname='OpenWrt'' package/lean/default-settings/files/zzz-default-settings
 ##-----------------Add dev core for kenzo OpenClash------------------
-curl -sL -m 30 --retry 2 https://raw.githubusercontent.com/vernesong/OpenClash/core/master/dev/clash-linux-arm64.tar.gz -o /tmp/clash.tar.gz
-tar zxvf /tmp/clash.tar.gz -C /tmp >/dev/null 2>&1
-chmod +x /tmp/clash >/dev/null 2>&1
-mkdir -p package/kenzo/luci-app-openclash/root/etc/openclash/core
-mv /tmp/clash package/kenzo/luci-app-openclash/root/etc/openclash/core/clash >/dev/null 2>&1
-rm -rf /tmp/clash.tar.gz >/dev/null 2>&1
+#curl -sL -m 30 --retry 2 https://raw.githubusercontent.com/vernesong/OpenClash/core/master/dev/clash-linux-arm64.tar.gz -o /tmp/clash.tar.gz
+#tar zxvf /tmp/clash.tar.gz -C /tmp >/dev/null 2>&1
+#chmod +x /tmp/clash >/dev/null 2>&1
+#mkdir -p package/kenzo/luci-app-openclash/root/etc/openclash/core
+#mv /tmp/clash package/kenzo/luci-app-openclash/root/etc/openclash/core/clash >/dev/null 2>&1
+#rm -rf /tmp/clash.tar.gz >/dev/null 2>&1
