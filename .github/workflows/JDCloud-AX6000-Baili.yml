@@ -121,12 +121,12 @@ jobs:
       working-directory: /workdir
       run: |
         df -hT $PWD
-        git clone $REPO_URL -b $REPO_BRANCH openwrt
-        ln -sf /workdir/openwrt $GITHUB_WORKSPACE/openwrt
+        git clone $REPO_URL -b $REPO_BRANCH immortalwrt
+        ln -sf /workdir/immortalwrt $GITHUB_WORKSPACE/immortalwrt
         
     - name: 加载feeds.conf.default & DIY_P1_SH
       run: |
-        [ -e $FEEDS_CONF ] && mv $FEEDS_CONF openwrt/feeds.conf.default
+        [ -e $FEEDS_CONF ] && mv $FEEDS_CONF immortalwrt/feeds.conf.default
         chmod +x $DIY_P1_SH
         cd immortalwrt
         $GITHUB_WORKSPACE/$DIY_P1_SH
@@ -139,7 +139,7 @@ jobs:
         
     - name: 加载config & DIY_P2_SH
       run: |
-        [ -e $CONFIG_FILE ] && mv $CONFIG_FILE openwrt/.config
+        [ -e $CONFIG_FILE ] && mv $CONFIG_FILE immortalwrt/.config
         chmod +x $DIY_P2_SH
         cd immortalwrt
         $GITHUB_WORKSPACE/$DIY_P2_SH
@@ -161,8 +161,8 @@ jobs:
         
     - name: 选择无线firmware
       run: |
-        cp -r JDCloud-AX6000-Baili/firmware/mt_wifi/mt7986-fw-jdc openwrt/package/mtk/drivers/mt_wifi/files
-        cp -r JDCloud-AX6000-Baili/firmware/warp/mt7986-fw-jdc openwrt/package/mtk/drivers/warp/files
+        cp -r JDCloud-AX6000-Baili/firmware/mt_wifi/mt7986-fw-jdc immortalwrt/package/mtk/drivers/mt_wifi/files
+        cp -r JDCloud-AX6000-Baili/firmware/warp/mt7986-fw-jdc immortalwrt/package/mtk/drivers/warp/files
         cd immortalwrt
         if [ ${{ github.event.inputs.WA_FW }} == 'no-new-fw' ]; then
                 sed -i '/CONFIG_MTK_MT7986_NEW_FW=y/d' .config
@@ -178,7 +178,7 @@ jobs:
     - name: 使用GSW交换机驱动（非DSA）
       if: github.event.inputs.GSW == 'true'
       run: |
-        cp JDCloud-AX6000-Baili/mt7986a-gsw-jdcloud-re-cp-03.dts openwrt/target/linux/mediatek/files-5.4/arch/arm64/boot/dts/mediatek/mt7986a-jdcloud-re-cp-03.dts
+        cp JDCloud-AX6000-Baili/mt7986a-gsw-jdcloud-re-cp-03.dts immortalwrt/target/linux/mediatek/files-5.4/arch/arm64/boot/dts/mediatek/mt7986a-jdcloud-re-cp-03.dts
         cd immortalwrt
         sed -i '/jdcloud,re-cp-03)/ {n; /lan1 lan2 lan3 lan4/ {s/lan1 lan2 lan3 lan4/eth0/; a\
         \t\tucidef_add_switch "switch0" "1:lan" "2:lan" "3:lan" "4:lan" "6u@eth0"
