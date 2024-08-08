@@ -19,29 +19,7 @@ on:
         required: true
         default: true
         type: boolean
-      WA_FW:
-        description: 'Choose mt_wifi firmware'
-        required: true
-        default: 'mt7986-fw-20230808'
-        type: choice
-        options:
-        - no-new-fw
-        - mt7986-fw-20221208
-        - mt7986-fw-jdc
-        - mt7986-fw-20230421
-        - mt7986-fw-20230808
-        - mt7986-fw-20231024
-      WO_FW:
-        description: 'Choose warp firmware'
-        required: true
-        default: 'mt7986-fw-20230808'
-        type: choice
-        options:
-        - no-new-fw
-        - mt7986-fw-jdc
-        - mt7986-fw-20230421
-        - mt7986-fw-20230808
-        - mt7986-fw-20231024
+      
       GSW:
         description: 'Use GSW switch driver (non-DSA)'
         required: true
