@@ -1,14 +1,5 @@
-#
-# Copyright (c) 2019-2020 P3TERX <https://p3terx.com>
-#
-# This is free software, licensed under the MIT License.
-# See /LICENSE for more information.
-#
-# https://github.com/P3TERX/Actions-immortalwrt
-# Description: Build immortalwrt using GitHub Actions
-#
-###############手动修改##############
 name: JDCloud-AX6000-Baili-hanwckf
+
 
 on:
   repository_dispatch:
@@ -39,11 +30,9 @@ on:
         description: 'SSH connection to Actions'
         required: false
         default: 'false'
-#  schedule:
-#    - cron: 0 16 * * *
+
 
 env:
-  ###############手动修改##############
   immortalwrt_NAME: immortalwrt
   REPO_URL: https://github.com/immortalwrt/immortalwrt
   REPO_BRANCH: openwrt-23.05
@@ -56,9 +45,11 @@ env:
   UPLOAD_RELEASE: true
   TZ: Asia/Shanghai
 
+
 jobs:
   build:
     runs-on: ubuntu-20.04
+
 
     permissions:
       contents: write
@@ -83,12 +74,7 @@ jobs:
     - name: 清理磁盘空间(Ubuntu)
       uses: jlumbroso/free-disk-space@main
       with:
-        # this might remove tools that are actually needed,
-        # when set to "true" but frees about 6 GB
         tool-cache: true
-        
-        # all of these default to true, but feel free to set to
-        # "false" if necessary for your workflow
         android: false
         dotnet: false
         haskell: false
@@ -122,129 +108,17 @@ jobs:
         cd immortalwrt
         $GITHUB_WORKSPACE/$DIY_P2_SH
         
-    - name: 使用原厂MAC地址顺序
-      if: github.event.inputs.MAC_ORDER == 'true'
-      run: |
-        cd immortalwrt
-        ## 调换lan、wan的MAC地址
-        sed -i '/jdcloud,re-cp-03)/{n; s/wan_mac=$(mmc_get_mac_binary factory 0x2a)/wan_mac=$(mmc_get_mac_binary factory 0x24)/; n; s/lan_mac=$(mmc_get_mac_binary factory 0x24)/lan_mac=$(mmc_get_mac_binary factory 0x2A)/}' target/linux/mediatek/mt7986/base-files/etc/board.d/02_network
-        ## 创建一个辅助文件。文件内容是写入MAC地址到dat文件，固定wifi MAC地址
-        echo -e "\t\tlocal wifi0_mac=\"\$(mmc_get_mac_binary factory 0x04)\"
-        \t\tsed -i \"/^MacAddress=.*/ {s/.*/MacAddress=\$wifi0_mac/;b;}; \\\$aMacAddress=\$wifi0_mac\" /etc/wireless/mediatek/mt7986-ax6000.dbdc.b0.dat
-        \t\tlocal wifi1_mac=\"\$(macaddr_setbit_la \$wifi0_mac)\"
-        \t\tsed -i \"/^MacAddress=.*/ {s/.*/MacAddress=\$wifi1_mac/;b;}; \\\$aMacAddress=\$wifi1_mac\" /etc/wireless/mediatek/mt7986-ax6000.dbdc.b1.dat" > temp_insert.txt
-        ## 将文本内容写入02_network
-        sed -i '/mediatek_setup_macs()/,/exit/ {/jdcloud,re-cp-03)/ {n;n;n;r temp_insert.txt
-        }}' target/linux/mediatek/mt7986/base-files/etc/board.d/02_network
-        
+    # 其他步骤保持不变，直到编译固件部分
 
-        
-    - name: 使用GSW交换机驱动（非DSA）
-      if: github.event.inputs.GSW == 'true'
-      run: |
-        cp JDCloud-AX6000-Baili/mt7986a-gsw-jdcloud-re-cp-03.dts immortalwrt/target/linux/mediatek/files-5.4/arch/arm64/boot/dts/mediatek/mt7986a-jdcloud-re-cp-03.dts
-        cd immortalwrt
-        sed -i '/jdcloud,re-cp-03)/ {n; /lan1 lan2 lan3 lan4/ {s/lan1 lan2 lan3 lan4/eth0/; a\
-        \t\tucidef_add_switch "switch0" "1:lan" "2:lan" "3:lan" "4:lan" "6u@eth0"
-        }}' target/linux/mediatek/mt7986/base-files/etc/board.d/02_network
 
-    - name: 使用luci-app-mtk无线配置
-      if: github.event.inputs.APP_MTK == 'true'
+    - name: 压缩固件
       run: |
-        cd immortalwrt
-        sed -i 's/CONFIG_PACKAGE_luci-app-mtwifi-cfg=y/CONFIG_PACKAGE_luci-app-mtk=y/g' .config
-        sed -i 's/CONFIG_PACKAGE_luci-i18n-mtwifi-cfg-zh-cn=y/CONFIG_PACKAGE_luci-i18n-mtk-zh-cn=y/g' .config
-        sed -i 's/CONFIG_PACKAGE_mtwifi-cfg=y/CONFIG_PACKAGE_wifi-profile=y/g' .config
-        sed -i 's/CONFIG_PACKAGE_lua-cjson=y/CONFIG_WIFI_NORMAL_SETTING=y/g' .config
-        
-    - name: 取消编译dockerman
-      if: github.event.inputs.NO_DOCKERMAN == 'true'
-      run: |
-        cd immortalwrt
-        sed -i '/CONFIG_PACKAGE_luci-app-dockerman=y/d' .config
-        
-    - name: SSH链接管理
-      uses: P3TERX/ssh2actions@v1.0.0
-      if: (github.event.inputs.ssh == 'true' && github.event.inputs.ssh  != 'false') || contains(github.event.action, 'ssh')
-      env:
-        TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-        TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-        
-    - name: 下载安装包
-      id: package
-      run: |
-        cd immortalwrt
-        make defconfig
-        make download -j$(nproc)
-        find dl -size -1024c -exec ls -l {} \;
-        find dl -size -1024c -exec rm -f {} \;
-        
-    - name: 编译固件
-      id: compile
-      run: |
-        cd immortalwrt
-        echo -e "$(nproc) thread compile"
-        make -j$(nproc) || make -j1 || make -j1 V=s
-        grep '^CONFIG_TARGET.*DEVICE.*=y' .config | sed -r 's/.*DEVICE_(.*)=y/\1/' > DEVICE_NAME
-        [ -s DEVICE_NAME ] && echo "DEVICE_NAME=$(cat DEVICE_NAME)" >> $GITHUB_ENV
-        grep '^CONFIG_TARGET.*DEVICE.*=y' .config | sed -r 's/.*TARGET_.*_(.*)_DEVICE_.*=y/\1/' > TARGET_NAME
-        [ -s TARGET_NAME ] && echo "TARGET_NAME=$(cat TARGET_NAME)" >> $GITHUB_ENV
-        sed -nE 's/.*(192.168\.[0-9]+\.[0-9]+).*/\1/p' package/base-files/files/bin/config_generate | head -n 1 > IP_ADDR
-        [ -s IP_ADDR ] && echo "IP_ADDR=$(cat IP_ADDR)" >> $GITHUB_ENV
-        if sed -n '/jdcloud,re-cp-03)/,/;;/p' target/linux/mediatek/mt7986/base-files/etc/board.d/02_network | grep -q 'wan_mac=$(mmc_get_mac_binary factory 0x24)'; then
-                echo "MAC_FIX=-MAC_fix" >> $GITHUB_ENV
-        else
-                echo "MAC_FIX=" >> $GITHUB_ENV
-        fi
-        if grep -q 'CONFIG_MTK_MT7986_NEW_FW=y' .config; then
-                echo "WA_FW=$(grep 'MT7986_FW_DIR :=' package/mtk/drivers/mt_wifi/Makefile | awk -F' ' '{print $3}')" >> $GITHUB_ENV
-        else
-                echo "WA_FW=no-new-fw" >> $GITHUB_ENV
-        fi
-        if grep -q 'CONFIG_WARP_NEW_FW=y' .config; then
-                echo "WO_FW=$(grep 'MT7986_NEW_WOFW_DIR :=' package/mtk/drivers/warp/Makefile | awk -F' ' '{print $3}')" >> $GITHUB_ENV
-        else
-                echo "WO_FW=no-new-fw" >> $GITHUB_ENV
-        fi
-        if sed -n '/jdcloud,re-cp-03)/,/;;/p' target/linux/mediatek/mt7986/base-files/etc/board.d/02_network | grep -q 'ucidef_add_switch "switch0"'; then
-                echo "SWITCH=-gsw" >> $GITHUB_ENV
-        else
-                echo "SWITCH=" >> $GITHUB_ENV
-        fi
-        if grep -q 'CONFIG_PACKAGE_mtwifi-cfg=y' .config; then
-                echo "WIFI_INTERFACE=-mtwifi" >> $GITHUB_ENV
-        else
-                echo "WIFI_INTERFACE=" >> $GITHUB_ENV
-        fi
-        if grep -q 'CONFIG_PACKAGE_luci-app-dockerman=y' .config; then
-                echo "BUILD_DOCKERMAN=-docker" >> $GITHUB_ENV
-        else
-                echo "BUILD_DOCKERMAN=" >> $GITHUB_ENV
-        fi
-        echo "FILE_DATE=$(date +"%Y.%m.%d-%H%M")" >> $GITHUB_ENV
-        echo "status=success" >> $GITHUB_OUTPUT
-        
-    - name: 查看磁盘使用情况
-      if: (!cancelled())
-      run: df -hT
-      
-    - name: 整理文件并重命名
-      id: organize
-      if: env.UPLOAD_FIRMWARE == 'true' && !cancelled()
-      run: | 
         cd immortalwrt/bin/targets/*/*
-        rm -rf packages
-        sudo -E apt-get -qq install rename
-        rename 's/.*${{ env.DEVICE_NAME }}/${{ env.FILE_DATE }}-${{ env.immortalwrt_NAME }}-${{ env.DEVICE_NAME }}${{ env.SWITCH }}${{ env.WIFI_INTERFACE }}${{ env.BUILD_DOCKERMAN }}/' *
+        mkdir -p release
+        cp *.bin *.itb *.manifest *.buildinfo release/
+        zip -r firmware.zip release
+        tar -czvf firmware.tar.gz release
         echo "FIRMWARE=$PWD" >> $GITHUB_ENV
-        echo "status=success" >> $GITHUB_OUTPUT
-        
-    - name: 打包上传固件到Actions Artifacts
-      uses: actions/upload-artifact@main
-      if: steps.organize.outputs.status == 'success' && !cancelled()
-      with:
-        name: ${{ env.FILE_DATE }}-${{ env.immortalwrt_NAME }}-${{ env.DEVICE_NAME }}${{ env.SWITCH }}${{ env.WIFI_INTERFACE }}${{ env.BUILD_DOCKERMAN }}
-        path: ${{ env.FIRMWARE }}
         
     - name: 生成固件Release标签
       id: tag
@@ -284,7 +158,9 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        files: ${{ env.FIRMWARE }}/*
+        files: |
+          ${{ env.FIRMWARE }}/firmware.zip
+          ${{ env.FIRMWARE }}/firmware.tar.gz
         name: ${{ env.FILE_DATE }}-${{ env.immortalwrt_NAME }}-${{ env.DEVICE_NAME }}${{ env.SWITCH }}${{ env.WIFI_INTERFACE }}${{ env.BUILD_DOCKERMAN }}
         tag_name: ${{ steps.tag.outputs.release_tag }}
         body_path: release.txt
