@@ -247,7 +247,7 @@ jobs:
         path: ${{ env.FIRMWARE }}
         
     - name: 生成固件Release标签
-      id: tag
+      id: create_release
       if: env.UPLOAD_RELEASE == 'true' && !cancelled()
       run: |
         touch release.txt
@@ -277,16 +277,25 @@ jobs:
         fi
         echo "release_tag=${{ env.FILE_DATE }}-${{ env.immortalwrt_NAME }}-${{ env.DEVICE_NAME }}${{ env.SWITCH }}${{ env.WIFI_INTERFACE }}${{ env.BUILD_DOCKERMAN }}" >> $GITHUB_OUTPUT
         echo "status=success" >> $GITHUB_OUTPUT
-        
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ steps.tag.outputs.release_tag }}
+        release_name: ${{ env.FILE_DATE }}-${{ env.immortalwrt_NAME }}-${{ env.DEVICE_NAME }}${{ env.SWITCH }}${{ env.WIFI_INTERFACE }}${{ env.BUILD_DOCKERMAN }}
+        body_path: release.txt
+        draft: false
+        prerelease: false
+
     - name: 压缩为 firmware.zip
-      if: steps.tag.outputs.status == 'success' && !cancelled()
+      if: steps.create_release.outputs.status == 'success' && !cancelled()
       run: |
         cd ${{ env.FIRMWARE }}
         zip -r firmware.zip .
 
     - name: 上传 firmware.zip 到 Release
       uses: actions/upload-release-asset@v1
-      if: steps.tag.outputs.status == 'success' && !cancelled()
+      if: steps.create_release.outputs.status == 'success' && !cancelled()
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }}
         asset_path: ${{ env.FIRMWARE }}/firmware.zip
@@ -296,14 +305,14 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     - name: 压缩为 firmware.tar.gz
-      if: steps.tag.outputs.status == 'success' && !cancelled()
+      if: steps.create_release.outputs.status == 'success' && !cancelled()
       run: |
         cd ${{ env.FIRMWARE }}
         tar -czvf firmware.tar.gz .
 
     - name: 上传 firmware.tar.gz 到 Release
       uses: actions/upload-release-asset@v1
-      if: steps.tag.outputs.status == 'success' && !cancelled()
+      if: steps.create_release.outputs.status == 'success' && !cancelled()
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }}
         asset_path: ${{ env.FIRMWARE }}/firmware.tar.gz
