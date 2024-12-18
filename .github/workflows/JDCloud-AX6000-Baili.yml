@@ -278,19 +278,32 @@ jobs:
         echo "release_tag=${{ env.FILE_DATE }}-${{ env.immortalwrt_NAME }}-${{ env.DEVICE_NAME }}${{ env.SWITCH }}${{ env.WIFI_INTERFACE }}${{ env.BUILD_DOCKERMAN }}" >> $GITHUB_OUTPUT
         echo "status=success" >> $GITHUB_OUTPUT
         
-    - name: 发布固件至Release
-      uses: softprops/action-gh-release@master
-      if: steps.tag.outputs.status == 'success' && !cancelled()
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      run: 
-        cd ${{ env.FIRMWARE }}
-        zip -r firmware.zip .
-        tar -czvf firmware.tar.gz .
-      with:
-        files: |
-          ${{ env.FIRMWARE }}/firmware.zip
-          ${{ env.FIRMWARE }}/firmware.tar.gz
-        name: ${{ env.FILE_DATE }}-${{ env.immortalwrt_NAME }}-${{ env.DEVICE_NAME }}${{ env.SWITCH }}${{ env.WIFI_INTERFACE }}${{ env.BUILD_DOCKERMAN }}
-        tag_name: ${{ steps.tag.outputs.release_tag }}
-        body_path: release.txt
+      - name: 压缩为 firmware.zip
+        run: |
+          cd ${{ env.FIRMWARE }}
+          zip -r firmware.zip .
+
+      - name: 上传 firmware.zip 到 Release
+        uses: actions/upload-release-asset@v1
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ${{ env.FIRMWARE }}/firmware.zip
+          asset_name: firmware.zip
+          asset_content_type: application/zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 压缩为 firmware.tar.gz
+        run: |
+          cd ${{ env.FIRMWARE }}
+          tar -czvf firmware.tar.gz .
+
+      - name: 上传 firmware.tar.gz 到 Release
+        uses: actions/upload-release-asset@v1
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ${{ env.FIRMWARE }}/firmware.tar.gz
+          asset_name: firmware.tar.gz
+          asset_content_type: application/gzip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
