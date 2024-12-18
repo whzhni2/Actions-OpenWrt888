@@ -247,7 +247,7 @@ jobs:
         path: ${{ env.FIRMWARE }}
         
     - name: 生成固件Release标签
-      id: create_release
+      id: tag
       if: env.UPLOAD_RELEASE == 'true' && !cancelled()
       run: |
         touch release.txt
@@ -277,6 +277,9 @@ jobs:
         fi
         echo "release_tag=${{ env.FILE_DATE }}-${{ env.immortalwrt_NAME }}-${{ env.DEVICE_NAME }}${{ env.SWITCH }}${{ env.WIFI_INTERFACE }}${{ env.BUILD_DOCKERMAN }}" >> $GITHUB_OUTPUT
         echo "status=success" >> $GITHUB_OUTPUT
+
+    - name: 创建 Release
+      id: create_release
       uses: actions/create-release@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
